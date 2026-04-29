@@ -1,15 +1,8 @@
 import { useState } from 'react'
+import { useParams, Navigate } from 'react-router-dom'
 import Navbar from '@/components/layout/Navbar'
 import SalesReportingSidebar from '@/components/layout/SalesReportingSidebar'
-
-const recipients = [
-  { name: 'Albert Thomas', email: 'albert.thomas@gmail.com', status: 'Sent Successfully' },
-  { name: 'Jonathan Smith', email: 'jonathan.smith@gmail.com', status: 'Failed' },
-  { name: 'Christine Marks', email: 'christine.marks@gmail.com', status: 'Sent Successfully' },
-  { name: 'Jesse Jackson', email: 'jesse.jackson@gmail.com', status: 'Sent Successfully' },
-  { name: 'Susan Mann', email: 'susan.mann@gmail.com', status: 'Failed' },
-  { name: 'Martin Smith', email: 'martin.smith@gmail.com', status: 'Failed' },
-]
+import { assessments } from '@/data/assessments'
 
 const cpdStandardCards = [
   {
@@ -214,9 +207,14 @@ function ChevronDownIcon() {
 }
 
 export default function AssessmentDetailPage() {
+  const { id } = useParams<{ id: string }>()
+  const assessment = assessments.find(a => a.slug === id)
+
   const [activeTab, setActiveTab] = useState<'cpd' | 'sales'>('cpd')
   const [expert1Open, setExpert1Open] = useState(true)
   const [expert2Open, setExpert2Open] = useState(false)
+
+  if (!assessment) return <Navigate to="/dashboard" replace />
 
   return (
     <>
@@ -224,7 +222,7 @@ export default function AssessmentDetailPage() {
         breadcrumb={[
           { label: 'Dashboard', href: '/dashboard' },
           { label: 'Activities', href: '/dashboard' },
-          { label: 'Conference on Modern Financial Advice' },
+          { label: assessment.title },
         ]}
       />
       <div className="w-full max-w-[1245px] mx-auto flex items-start">
@@ -260,13 +258,13 @@ export default function AssessmentDetailPage() {
             <div className="flex items-start justify-between">
               <div>
                 <h1 className="text-[20px] font-bold text-[#0a0a0a]">
-                  Conference on Modern Financial Advice
+                  {assessment.title}
                 </h1>
                 <a
                   href="#"
                   className="text-[14px] text-[#1182e3] font-medium hover:underline mt-1 inline-block"
                 >
-                  Meeting Automation - Certificate
+                  {assessment.subtitleLabel}
                 </a>
               </div>
               <div className="flex items-center gap-2 shrink-0 ml-6" data-print-hide>
@@ -282,19 +280,19 @@ export default function AssessmentDetailPage() {
             <div className="grid grid-cols-4 gap-4">
               <div>
                 <p className="text-[12px] text-[#9ca3af]">Assessment Number</p>
-                <p className="text-[14px] font-semibold text-[#1182e3]">ENSO-25111803-58180001</p>
+                <p className="text-[14px] font-semibold text-[#1182e3]">{assessment.assessmentNumber}</p>
               </div>
               <div>
                 <p className="text-[12px] text-[#9ca3af]">Total CPD Points</p>
-                <p className="text-[14px] font-semibold text-[#1182e3]">2</p>
+                <p className="text-[14px] font-semibold text-[#1182e3]">{assessment.totalCpdPoints}</p>
               </div>
               <div>
                 <p className="text-[12px] text-[#9ca3af]">Assessment Date</p>
-                <p className="text-[14px] font-semibold text-[#1182e3]">18 November 2025</p>
+                <p className="text-[14px] font-semibold text-[#1182e3]">{assessment.assessmentDate}</p>
               </div>
               <div>
                 <p className="text-[12px] text-[#9ca3af]">Activity Date</p>
-                <p className="text-[14px] font-semibold text-[#1182e3]">18 November 2025</p>
+                <p className="text-[14px] font-semibold text-[#1182e3]">{assessment.activityDate}</p>
               </div>
             </div>
           </div>
@@ -734,11 +732,15 @@ export default function AssessmentDetailPage() {
               <div className="flex items-center gap-2" data-print-hide>
                 <span className="text-[13px] font-semibold text-[#404040]">Export Data CSV</span>
                 <BlueCircleButton onClick={() => {
+                  const escapeCell = (v: string) => {
+                    const safe = v.replace(/"/g, '""')
+                    return /^[=+\-@\t\r]/.test(safe) ? `\t${safe}` : safe
+                  }
                   const rows = [
                     ['Name', 'Email', 'Status'],
-                    ...recipients.map(r => [r.name, r.email, r.status]),
+                    ...assessment.recipients.map(r => [r.name, r.email, r.status]),
                   ]
-                  const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n')
+                  const csv = rows.map(r => r.map(v => `"${escapeCell(v)}"`).join(',')).join('\n')
                   const blob = new Blob([csv], { type: 'text/csv' })
                   const url = URL.createObjectURL(blob)
                   const a = document.createElement('a')
@@ -768,10 +770,10 @@ export default function AssessmentDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                {recipients.map((r, i) => (
+                {assessment.recipients.map((r, i) => (
                   <tr
                     key={i}
-                    className={`h-[52px] ${i < recipients.length - 1 ? 'border-b border-[#f3f4f6]' : ''}`}
+                    className={`h-[52px] ${i < assessment.recipients.length - 1 ? 'border-b border-[#f3f4f6]' : ''}`}
                   >
                     <td className="px-6 text-[14px] text-[#0a0a0a] font-medium">{r.name}</td>
                     <td className="px-6 text-[14px] text-[#737373]">{r.email}</td>

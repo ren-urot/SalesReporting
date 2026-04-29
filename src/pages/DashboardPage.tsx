@@ -2,28 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import Navbar from '@/components/layout/Navbar'
 import SalesReportingSidebar from '@/components/layout/SalesReportingSidebar'
-
-type IconType = 'person-edit' | 'doc-check' | 'doc-play' | 'doc-edit'
-
-type Activity = {
-  iconType: IconType
-  title: string
-  code?: string
-  tags?: string[]
-  href?: string
-}
-
-const activities: Activity[] = [
-  { iconType: 'person-edit', title: 'Conference on Modern Financial Advice', code: 'WTGQ-0001-05082025', tags: ['Meeting Automation', 'MCQ'], href: '/assessment/conference-on-modern-financial-advice' },
-  { iconType: 'person-edit', title: 'PDR Meeting Transcript Review',     code: 'WTGQ-0001-05082025', tags: ['Meeting Automation', 'Certificate'] },
-  { iconType: 'person-edit', title: 'Presentation Review',               code: 'WTGQ-0001-05082025', tags: ['Meeting Automation', 'Publish Quiz'] },
-  { iconType: 'doc-check',   title: 'Meeting Transcript & Key Insights', code: 'WTGQ-0001-05082025', tags: ['Transcript', 'MCQ'] },
-  { iconType: 'doc-play',    title: 'PDR Meeting Transcript Review',     code: 'WTGQ-0001-05082025', tags: ['Presentation', 'Certificate'] },
-  { iconType: 'doc-edit',    title: 'Presentation Review',               code: 'WTGQ-0001-05082025', tags: ['Written Materials', 'Publish Quiz'] },
-  { iconType: 'doc-check',   title: 'Meeting Transcript & Key Insights', code: 'WTGQ-0001-05082025', tags: ['Transcript', 'MCQ'] },
-  { iconType: 'doc-play',    title: 'PDR Meeting Transcript Review',     code: 'WTGQ-0001-05082025', tags: ['Presentation', 'Certificate'] },
-  { iconType: 'doc-edit',    title: 'Presentation Review',               code: 'WTGQ-0001-05082025', tags: ['Written Materials', 'Publish Quiz'] },
-]
+import { type IconType, type Activity, activities } from '@/data/activities'
 
 function ActivityIcon({ type }: { type: IconType }) {
   if (type === 'person-edit') return (

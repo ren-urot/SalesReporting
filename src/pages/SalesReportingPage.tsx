@@ -1,56 +1,11 @@
 import { useState } from 'react'
 import Navbar from '@/components/layout/Navbar'
 import SalesReportingSidebar from '@/components/layout/SalesReportingSidebar'
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type Confidence = 'Strong' | 'High' | 'Moderate' | 'Low' | 'Unassessable'
-type Trend = 'up' | 'down' | 'neutral'
-
-// ─── Data ─────────────────────────────────────────────────────────────────────
-
-const meetings = [
-  { name: 'Adrian Kowalski',   lastMeeting: '13 Mar 2026', count: 4, confidence: 'Moderate'     as Confidence, trend: 'up'      as Trend },
-  { name: 'Sarah Brennan',     lastMeeting: '28 Feb 2026', count: 6, confidence: 'High'          as Confidence, trend: 'up'      as Trend },
-  { name: 'James Tran',        lastMeeting: '10 Feb 2026', count: 3, confidence: 'Low'           as Confidence, trend: 'down'    as Trend },
-  { name: 'Michelle Okafor',   lastMeeting: '3 Feb 2026',  count: 2, confidence: 'Unassessable'  as Confidence, trend: 'neutral' as Trend },
-  { name: 'David Carmichael',  lastMeeting: '22 Jan 2026', count: 5, confidence: 'Strong'        as Confidence, trend: 'neutral' as Trend },
-  { name: 'Priya Nair',        lastMeeting: '15 Jan 2026', count: 3, confidence: 'Low'           as Confidence, trend: 'down'    as Trend },
-  { name: 'Tom Gillespie',     lastMeeting: '8 Jan 2026',  count: 4, confidence: 'Moderate'      as Confidence, trend: 'neutral' as Trend },
-]
-
-const objections = [
-  { text: 'Onboarding paperwork volume',            advisers: ['A', 'D', 'D', 'M'], count: 5 },
-  { text: 'Compliance requirement uncertainty',     advisers: ['A', 'D', 'P'],      count: 4 },
-  { text: 'Timeline hesitancy — managed accounts', advisers: ['A', 'D', 'F'],      count: 3 },
-  { text: 'Competitor platform trialling',          advisers: ['G', 'M', 'P'],      count: 3 },
-  { text: 'Fee transparency concerns',              advisers: ['S', 'D'],            count: 2 },
-]
-
-const topicCoverage = [
-  { name: 'Managed Accounts',    covered: 6, partial: 1, missed: 0 },
-  { name: 'FDS Renewal',         covered: 2, partial: 3, missed: 2 },
-  { name: 'Compliance Training', covered: 3, partial: 3, missed: 1 },
-  { name: 'Estate Planning',     covered: 1, partial: 2, missed: 4 },
-  { name: 'Platform Migration',  covered: 5, partial: 1, missed: 1 },
-  { name: 'Q1 Business Plan',    covered: 2, partial: 4, missed: 1 },
-]
-
-// Chart data: one dot per week, level 0=Unassessable…4=Strong (fractional ok)
-const chartDots: { week: number; level: number; score?: number }[] = [
-  { week: 1,  level: 2.1 },
-  { week: 2,  level: 2.2 },
-  { week: 3,  level: 2.4 },
-  { week: 4,  level: 2.2 },
-  { week: 5,  level: 2.3 },
-  { week: 6,  level: 2.5 },
-  { week: 7,  level: 2.4 },
-  { week: 8,  level: 2.6 },
-  { week: 9,  level: 2.3 },
-  { week: 10, level: 2.5 },
-  { week: 11, level: 2.6 },
-  { week: 12, level: 3.0, score: 58 },
-]
+import {
+  type Confidence, type Trend, type Period, type ChartDot,
+  PERIODS, meetings, objections, topicCoverage, chartDots,
+  MEETINGS_BY_PERIOD, DOTS_BY_PERIOD, KPI_BY_PERIOD,
+} from '@/data/salesReporting'
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -73,7 +28,6 @@ const AVATAR_COLORS: Record<string, { bg: string; fg: string }> = {
   J: { bg: '#cffafe', fg: '#0891b2' },
   T: { bg: '#f0fdf4', fg: '#15803d' },
 }
-
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -137,17 +91,9 @@ function Badge({ label }: { label: string }) {
 }
 
 function KpiCard({
-  iconBg,
-  icon,
-  value,
-  label,
-  badge,
+  iconBg, icon, value, label, badge,
 }: {
-  iconBg: string
-  icon: React.ReactNode
-  value: string
-  label: string
-  badge: string
+  iconBg: string; icon: React.ReactNode; value: string; label: string; badge: string
 }) {
   return (
     <div className="bg-white border border-[#e5e5e5] rounded-[12px] px-4 py-4 flex flex-col gap-2 min-w-0">
@@ -165,10 +111,10 @@ function KpiCard({
   )
 }
 
-function PortfolioChart() {
+function PortfolioChart({ dots }: { dots: ChartDot[] }) {
   const W = 920, H = 250
   const BAR_W = 6
-  const padL = 106 + BAR_W + 10   // label text + bar + gap
+  const padL = 106 + BAR_W + 10
   const padR  = 52
   const padT  = 22
   const padB  = 48
@@ -176,17 +122,17 @@ function PortfolioChart() {
   const chartH = H - padT - padB
   const chartW = W - padL - padR
 
-  // level: 0 = Unassessable (bottom) … 4 = Strong (top)
-  const xPos = (week: number) => padL + ((week - 1) / 11) * chartW
+  const n = dots.length
+  const xPos = (i: number) => padL + (n <= 1 ? chartW / 2 : (i / (n - 1)) * chartW)
   const yPos = (level: number) => padT + ((4 - level) / 4) * chartH
 
   const levels    = ['Unassessable', 'Low', 'Moderate', 'High', 'Strong']
   const lblColors = ['#ef4444', '#f97316', '#d97706', '#16a34a', '#15803d']
+  const font      = 'Geist Variable, Geist, ui-sans-serif, sans-serif'
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} width="100%" className="block">
       <defs>
-        {/* Smooth top-green → white-middle → bottom-red background */}
         <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%"   stopColor="#bbf7d0" stopOpacity="0.55" />
           <stop offset="38%"  stopColor="#dcfce7" stopOpacity="0.18" />
@@ -194,7 +140,6 @@ function PortfolioChart() {
           <stop offset="62%"  stopColor="#fee2e2" stopOpacity="0.18" />
           <stop offset="100%" stopColor="#fca5a5" stopOpacity="0.50" />
         </linearGradient>
-        {/* Left bar: green → amber → red */}
         <linearGradient id="leftBar" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%"   stopColor="#16a34a" />
           <stop offset="48%"  stopColor="#f59e0b" />
@@ -202,82 +147,42 @@ function PortfolioChart() {
         </linearGradient>
       </defs>
 
-      {/* Smooth gradient background fill */}
-      <rect
-        x={padL} y={padT}
-        width={chartW} height={chartH}
-        fill="url(#bgGrad)"
-      />
+      <rect x={padL} y={padT} width={chartW} height={chartH} fill="url(#bgGrad)" />
 
-      {/* Dashed horizontal grid lines at each confidence level */}
       {levels.map((_, i) => (
-        <line
-          key={i}
-          x1={padL}          y1={yPos(i)}
-          x2={padL + chartW} y2={yPos(i)}
-          stroke="#cbd5e1" strokeWidth="1" strokeDasharray="5 7"
-        />
+        <line key={i} x1={padL} y1={yPos(i)} x2={padL + chartW} y2={yPos(i)}
+          stroke="#cbd5e1" strokeWidth="1" strokeDasharray="5 7" />
       ))}
 
-      {/* Left gradient pill bar */}
-      <rect
-        x={padL - BAR_W - 9} y={padT}
-        width={BAR_W} height={chartH}
-        rx="3" fill="url(#leftBar)"
-      />
+      <rect x={padL - BAR_W - 9} y={padT} width={BAR_W} height={chartH} rx="3" fill="url(#leftBar)" />
 
-      {/* Y-axis labels */}
       {levels.map((label, i) => (
-        <text
-          key={label}
-          x={padL - BAR_W - 15} y={yPos(i)}
+        <text key={label} x={padL - BAR_W - 15} y={yPos(i)}
           dominantBaseline="middle" textAnchor="end"
-          fontSize="11.5" fontWeight="500"
-          fontFamily="Geist, ui-sans-serif, sans-serif"
-          fill={lblColors[i]}
-        >
+          fontSize="11.5" fontWeight="500" fontFamily={font} fill={lblColors[i]}>
           {label}
         </text>
       ))}
 
-      {/* X-axis week labels */}
-      {Array.from({ length: 12 }, (_, i) => i + 1).map(w => (
-        <text
-          key={w}
-          x={xPos(w)} y={H - padB + 18}
-          textAnchor="middle" fontSize="11"
-          fontFamily="Geist, ui-sans-serif, sans-serif"
-          fill="#9ca3af"
-        >
-          W{w}
+      {dots.map((d, i) => (
+        <text key={i} x={xPos(i)} y={H - padB + 18}
+          textAnchor="middle" fontSize="11" fontFamily={font} fill="#9ca3af">
+          W{d.week}
         </text>
       ))}
 
-      {/* "WEEKS" centred below x-axis */}
-      <text
-        x={padL + chartW / 2} y={H - 7}
+      <text x={padL + chartW / 2} y={H - 7}
         textAnchor="middle" fontSize="10" fontWeight="600"
-        fontFamily="Geist, ui-sans-serif, sans-serif"
-        fill="#9ca3af" letterSpacing="2"
-      >
+        fontFamily={font} fill="#9ca3af" letterSpacing="2">
         WEEKS
       </text>
 
-      {/* Data dots */}
-      {chartDots.map((d, i) => (
+      {dots.map((d, i) => (
         <g key={i}>
-          <circle
-            cx={xPos(d.week)} cy={yPos(d.level)}
-            r={d.score != null ? 10 : 8}
-            fill="#16a34a"
-          />
+          <circle cx={xPos(i)} cy={yPos(d.level)} r={d.score != null ? 10 : 8} fill="#16a34a" />
           {d.score != null && (
-            <text
-              x={xPos(d.week) + 16} y={yPos(d.level) - 14}
-              fontSize="15" fontWeight="700"
-              fontFamily="Geist, ui-sans-serif, sans-serif"
-              fill="#16a34a"
-            >
+            <text x={xPos(i) + 16} y={yPos(d.level) - 14}
+              fontSize="15" fontWeight="700" fontFamily={font} fill="#16a34a">
               {d.score}
             </text>
           )}
@@ -288,9 +193,6 @@ function PortfolioChart() {
 }
 
 // ─── Main page ────────────────────────────────────────────────────────────────
-
-type Period = 'Weeks' | 'Months' | 'Quarter' | 'Year'
-const PERIODS: Period[] = ['Weeks', 'Months', 'Quarter', 'Year']
 
 export default function SalesReportingPage() {
   const [expandedObjections, setExpandedObjections] = useState<number[]>([])
@@ -303,13 +205,16 @@ export default function SalesReportingPage() {
     )
   }
 
-  const totalAdvisers = 7
+  const visibleMeetings = meetings.slice(0, MEETINGS_BY_PERIOD[period])
+  const visibleDots     = chartDots.slice(-DOTS_BY_PERIOD[period])
+  const kpi             = KPI_BY_PERIOD[period]
+  const totalAdvisers   = visibleMeetings.length
 
   return (
     <>
       <Navbar
         breadcrumb={[
-          { label: 'Dashboard', href: '#' },
+          { label: 'Dashboard', href: '/dashboard' },
           { label: 'Sales Reporting' },
         ]}
       />
@@ -342,7 +247,7 @@ export default function SalesReportingPage() {
                   </button>
                 </div>
                 {/* Period filter */}
-                <div className="relative">
+                <div className="relative" data-print-hide>
                   <button
                     onClick={() => setPeriodOpen(o => !o)}
                     className="flex items-center gap-2 border border-[#e5e5e5] rounded-lg px-3 h-[35px] bg-white hover:bg-gray-50 transition-colors"
@@ -390,8 +295,8 @@ export default function SalesReportingPage() {
                     <line x1="3" y1="10" x2="21" y2="10" />
                   </svg>
                 }
-                value="22"
-                label="Meetings This Week"
+                value={kpi.meetings}
+                label={`Meetings This ${period === 'Weeks' ? 'Week' : period === 'Months' ? 'Month' : period}`}
                 badge="+15%"
               />
               <KpiCard
@@ -403,7 +308,7 @@ export default function SalesReportingPage() {
                     <circle cx="12" cy="12" r="2" />
                   </svg>
                 }
-                value="82%"
+                value={kpi.effectiveness}
                 label="Avg Effectiveness"
                 badge="+5%"
               />
@@ -416,7 +321,7 @@ export default function SalesReportingPage() {
                     <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
                   </svg>
                 }
-                value="18"
+                value={kpi.advisers}
                 label="Advisers Met"
                 badge="+3"
               />
@@ -436,7 +341,7 @@ export default function SalesReportingPage() {
             {/* Portfolio Confidence Chart */}
             <div className="border border-[#e5e5e5] rounded-[10px] px-5 pt-4 pb-3 mb-6">
               <h3 className="text-[14px] font-semibold text-[#0a0a0a] mb-3">Portfolio Confidence</h3>
-              <PortfolioChart />
+              <PortfolioChart dots={visibleDots} />
             </div>
 
             {/* Recent Meetings */}
@@ -457,21 +362,17 @@ export default function SalesReportingPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {meetings.map((m, i) => (
+                    {visibleMeetings.map((m, i) => (
                       <tr key={i} className="border-b border-[#f3f4f6] last:border-0 h-[46px] hover:bg-gray-50 transition-colors">
                         <td className="px-4 text-[13px] font-medium text-[#0a0a0a] whitespace-nowrap">{m.name}</td>
                         <td className="px-4 text-[13px] text-[#737373] whitespace-nowrap">{m.lastMeeting}</td>
                         <td className="px-4 text-[13px] text-[#404040]">{m.count}</td>
+                        <td className="px-4"><ConfidenceBar level={m.confidence} /></td>
+                        <td className="px-4"><TrendArrow trend={m.trend} /></td>
                         <td className="px-4">
-                          <ConfidenceBar level={m.confidence} />
-                        </td>
-                        <td className="px-4">
-                          <TrendArrow trend={m.trend} />
-                        </td>
-                        <td className="px-4">
-                          <a href="#" className="text-[13px] text-[#1182e3] hover:underline whitespace-nowrap">
+                          <button className="text-[13px] text-[#1182e3] hover:underline whitespace-nowrap">
                             View last meeting
-                          </a>
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -498,9 +399,7 @@ export default function SalesReportingPage() {
                       <span className="text-[13px] font-medium text-[#0a0a0a] text-left">{obj.text}</span>
                       <div className="flex items-center gap-2 shrink-0 ml-3">
                         <div className="flex items-center -space-x-1">
-                          {obj.advisers.map((a, j) => (
-                            <AvatarPill key={j} initial={a} />
-                          ))}
+                          {obj.advisers.map((a, j) => <AvatarPill key={j} initial={a} />)}
                         </div>
                         <span className="text-[12px] text-[#737373] whitespace-nowrap">{obj.count} advisers</span>
                         <svg
@@ -533,22 +432,16 @@ export default function SalesReportingPage() {
                 </p>
                 <div className="flex flex-col gap-4">
                   {topicCoverage.map((topic, i) => {
-                    const coveredPct  = (topic.covered / totalAdvisers) * 100
-                    const partialPct  = (topic.partial  / totalAdvisers) * 100
-                    const missedPct   = (topic.missed   / totalAdvisers) * 100
+                    const coveredPct = (topic.covered / totalAdvisers) * 100
+                    const partialPct = (topic.partial  / totalAdvisers) * 100
+                    const missedPct  = (topic.missed   / totalAdvisers) * 100
                     return (
                       <div key={i} className="flex items-center gap-4">
                         <span className="text-[13px] text-[#404040] w-[150px] shrink-0">{topic.name}</span>
                         <div className="flex-1 flex rounded-full overflow-hidden h-2.5 bg-[#f3f4f6]">
-                          {coveredPct > 0 && (
-                            <div style={{ width: `${coveredPct}%`, background: '#22c55e' }} />
-                          )}
-                          {partialPct > 0 && (
-                            <div style={{ width: `${partialPct}%`, background: '#fbbf24' }} />
-                          )}
-                          {missedPct > 0 && (
-                            <div style={{ width: `${missedPct}%`, background: '#e5e7eb' }} />
-                          )}
+                          {coveredPct > 0 && <div style={{ width: `${coveredPct}%`, background: '#22c55e' }} />}
+                          {partialPct > 0 && <div style={{ width: `${partialPct}%`, background: '#fbbf24' }} />}
+                          {missedPct  > 0 && <div style={{ width: `${missedPct}%`,  background: '#e5e7eb' }} />}
                         </div>
                         <span className="text-[12px] text-[#737373] shrink-0 w-[200px] text-right">
                           <span className="text-[#16a34a] font-medium">{topic.covered} covered</span>
@@ -561,7 +454,6 @@ export default function SalesReportingPage() {
                     )
                   })}
                 </div>
-                {/* Legend */}
                 <div className="flex items-center gap-5 mt-6">
                   <div className="flex items-center gap-1.5">
                     <span className="w-3 h-3 rounded-full bg-[#22c55e]" />
