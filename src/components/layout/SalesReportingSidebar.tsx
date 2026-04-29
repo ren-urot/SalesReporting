@@ -4,7 +4,6 @@ export default function SalesReportingSidebar() {
   const { pathname } = useLocation()
   const isDashboard      = pathname === '/dashboard' || pathname === '/'
   const isSalesReporting = pathname === '/sales-reporting'
-  const isAfslReporting  = pathname === '/afsl-reporting'
 
   return (
     <aside className="sticky top-[52px] h-[calc(100vh-52px)] overflow-y-auto w-[280px] shrink-0 bg-[#f5f5f5] flex flex-col gap-2.5 p-3">

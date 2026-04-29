@@ -153,23 +153,6 @@ function FileDownIcon() {
   )
 }
 
-function DownloadIcon({ color = 'white' }: { color?: string }) {
-  return (
-    <svg
-      width="15"
-      height="15"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke={color}
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-    </svg>
-  )
-}
-
 function BlueCircleButton({ onClick }: { onClick?: () => void }) {
   return (
     <button onClick={onClick} className="w-10 h-10 rounded-full bg-[#1182e3] flex items-center justify-center shrink-0 hover:bg-blue-600 transition-colors">
