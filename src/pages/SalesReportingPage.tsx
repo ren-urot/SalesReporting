@@ -330,9 +330,9 @@ export default function SalesReportingPage() {
               </div>
               <div className="flex flex-col items-end gap-2">
                 {/* Export PDF */}
-                <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center gap-2 mb-3" data-print-hide>
                   <span className="text-[13px] font-semibold text-[#404040]">Export Entire Report to PDF</span>
-                  <button className="w-10 h-10 rounded-full bg-[#1182e3] flex items-center justify-center hover:bg-blue-600 transition-colors shrink-0">
+                  <button onClick={() => window.print()} className="w-10 h-10 rounded-full bg-[#1182e3] flex items-center justify-center hover:bg-blue-600 transition-colors shrink-0">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M14.5 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7.5L14.5 2z" />
                       <polyline points="14 2 14 8 20 8" />
