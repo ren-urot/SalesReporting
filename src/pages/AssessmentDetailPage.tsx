@@ -733,7 +733,20 @@ export default function AssessmentDetailPage() {
               <span className="text-[16px] font-semibold text-[#0a0a0a]">Certificate Recipients</span>
               <div className="flex items-center gap-2" data-print-hide>
                 <span className="text-[13px] font-semibold text-[#404040]">Export Data CSV</span>
-                <BlueCircleButton />
+                <BlueCircleButton onClick={() => {
+                  const rows = [
+                    ['Name', 'Email', 'Status'],
+                    ...recipients.map(r => [r.name, r.email, r.status]),
+                  ]
+                  const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n')
+                  const blob = new Blob([csv], { type: 'text/csv' })
+                  const url = URL.createObjectURL(blob)
+                  const a = document.createElement('a')
+                  a.href = url
+                  a.download = 'certificate-recipients.csv'
+                  a.click()
+                  URL.revokeObjectURL(url)
+                }} />
               </div>
             </div>
 
